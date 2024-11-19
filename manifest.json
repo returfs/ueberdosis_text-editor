@@ -1,0 +1,49 @@
+{
+  "_virtual_mf-REMOTE_ENTRY_ID-Back2_nH.js": {
+    "file": "assets/virtual_mf-REMOTE_ENTRY_ID-Back2_nH.js",
+    "name": "virtual_mf-REMOTE_ENTRY_ID",
+    "dynamicImports": [
+      "resources/js/Extension.tsx"
+    ]
+  },
+  "node_modules/__mf__virtual/react_mf_2_pdf_mf_2_viewer_pdf_mf_2_viewer__mf_v__hostAutoInit__mf_v__.js": {
+    "file": "assets/hostInit-DX8twFXx.js",
+    "name": "hostInit",
+    "src": "node_modules/__mf__virtual/react_mf_2_pdf_mf_2_viewer_pdf_mf_2_viewer__mf_v__hostAutoInit__mf_v__.js",
+    "isEntry": true,
+    "imports": [
+      "_virtual_mf-REMOTE_ENTRY_ID-Back2_nH.js"
+    ]
+  },
+  "resources/js/Extension.tsx": {
+    "file": "assets/Extension-Ci50G2eP.js",
+    "name": "Extension",
+    "src": "resources/js/Extension.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_virtual_mf-REMOTE_ENTRY_ID-Back2_nH.js"
+    ],
+    "css": [
+      "assets/Extension-D5d5I9UI.css"
+    ]
+  },
+  "resources/js/app.tsx": {
+    "file": "assets/app-Jul40NzA.js",
+    "name": "app",
+    "src": "resources/js/app.tsx",
+    "isEntry": true,
+    "imports": [
+      "node_modules/__mf__virtual/react_mf_2_pdf_mf_2_viewer_pdf_mf_2_viewer__mf_v__hostAutoInit__mf_v__.js",
+      "_virtual_mf-REMOTE_ENTRY_ID-Back2_nH.js"
+    ]
+  },
+  "virtual:mf-REMOTE_ENTRY_ID": {
+    "file": "remoteEntry.js",
+    "name": "remoteEntry",
+    "src": "virtual:mf-REMOTE_ENTRY_ID",
+    "isEntry": true,
+    "imports": [
+      "_virtual_mf-REMOTE_ENTRY_ID-Back2_nH.js"
+    ]
+  }
+}

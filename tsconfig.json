@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "noEmit": true,
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "jsx": "react",
+    "strict": true,
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "lib": ["esnext", "dom"],
+    "paths": {
+      "@/*": ["./resources/js/*"]
+    },
+    "types": ["vite/client"]
+  },
+  "include": ["resources/**/*"]
+}
