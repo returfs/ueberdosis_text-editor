@@ -7,6 +7,9 @@ import {
 } from '@returfs/shared-external-react';
 // import { Doc as YDoc } from 'yjs';
 
+import '../css/app.css';
+import '@returfs/shared-external-react/dist/index.css';
+
 export default memo(function Extension({
   resourceRoute,
   settings,

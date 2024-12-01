@@ -10,7 +10,7 @@ declare global {
   }
 }
 
-export const useBlockEditor = () => {
+export const useBlockEditor = (content: string) => {
   const editor = useEditor(
     {
       immediatelyRender: true,
@@ -18,7 +18,7 @@ export const useBlockEditor = () => {
       autofocus: true,
       onCreate: ctx => {
         if (ctx.editor.isEmpty) {
-          ctx.editor.commands.setContent(initialContent);
+          ctx.editor.commands.setContent(content);
           ctx.editor.commands.focus('start', { scrollIntoView: true });
         }
       },

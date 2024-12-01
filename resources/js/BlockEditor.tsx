@@ -1,10 +1,7 @@
 import React, { memo, useRef } from 'react';
 import { EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import '../css/app.css';
 import LinkMenu from './components/menus/LinkMenu/LinkMenu';
 import { useBlockEditor } from './hooks/useBlockEditor';
-import { twMerge } from 'tailwind-merge';
 import { ContentItemMenu } from './components/menus/ContentItemMenu';
 import { TextMenu } from './components/menus/TextMenu';
 import { ColumnsMenu } from './components/menus/MultiColumn/menus';
@@ -20,21 +17,14 @@ export default memo(function BlockEditor({
   settings: any;
   //   ydoc: Doc;
 }) {
-  const extensions = [StarterKit];
   const content = `
-<p>Hello World! 123</p>
 <h1>Consume the Editor context in child components</h1>
 If you use the EditorProvider to setup your Tiptap editor, you can now easily access your editor instance from any child component using the useCurrentEditor hook.
 `;
 
   const menuContainerRef = useRef(null);
 
-  //   const editor = useEditor({
-  //     extensions,
-  //     content,
-  //   });
-
-  const { editor } = useBlockEditor();
+  const { editor } = useBlockEditor(content);
 
   if (!editor) {
     return null;
@@ -43,7 +33,7 @@ If you use the EditorProvider to setup your Tiptap editor, you can now easily ac
   console.log('editor', editor);
 
   return (
-    <div className={twMerge('flex h-full')} ref={menuContainerRef}>
+    <div className="flex h-full" ref={menuContainerRef}>
       <div className="relative flex h-full flex-1 flex-col overflow-hidden">
         <EditorContent className="flex-1 overflow-y-auto" editor={editor} />
         <ContentItemMenu editor={editor} />

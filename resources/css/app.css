@@ -1,10 +1,12 @@
+@import 'globals.css';
+
 @import 'partials/animations.css';
 @import 'partials/blocks.css';
 @import 'partials/code.css';
 @import 'partials/lists.css';
+@import 'partials/placeholder.css';
 @import 'partials/table.css';
 @import 'partials/typography.css';
-@import 'globals.css';
 
 @tailwind base;
 @tailwind components;

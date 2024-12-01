@@ -1,12 +1,11 @@
+const defaultTheme = require('tailwindcss/defaultTheme');
+
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    './resources/js/**/*.{js,ts,jsx,tsx}',
-    '../../node_modules/@returfs/shared-external-react/**/*.{js,ts,jsx,tsx}',
-  ],
+  content: ['./resources/js/**/*.{js,ts,jsx,tsx}'],
+  safelist: ['ProseMirror'],
   theme: {
     extend: {},
   },
-  layers: ['utilities'],
-  plugins: [],
+  plugins: [require('tailwindcss-animate')],
 };

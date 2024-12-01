@@ -31,6 +31,7 @@ export { HorizontalRule } from './HorizontalRule';
 export { ImageBlock } from './ImageBlock';
 export { Link } from './Link';
 export { Selection } from './Selection';
+export { SlashCommand } from './SlashCommand';
 export { TrailingNode } from './TrailingNode';
 export { Quote } from './BlockquoteFigure/Quote';
 export { QuoteCaption } from './BlockquoteFigure/QuoteCaption';
