@@ -20,7 +20,9 @@ export default defineConfig({
     origin: 'http://localhost:7004',
   },
   base: 'http://localhost:7004/',
-  plugins: [react()],
+  plugins: [
+    react(),
+  ],
   resolve: {
     alias: {
       '@': '/resources/js',
