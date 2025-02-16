@@ -1,21 +1,15 @@
 import { useEditor } from '@tiptap/react';
-import type { AnyExtension, Editor } from '@tiptap/core';
+import type { AnyExtension } from '@tiptap/core';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import ExtensionKit from '@/extensions/extension-kit';
+import { UseBlockEditorProps } from './types';
 
-declare global {
-  interface Window {
-    editor: Editor | null;
-  }
-}
-
-export const useBlockEditor = (
-  content: string | null,
-  onUpdate,
-  ydoc,
+export const useBlockEditor = ({
+  doc,
   provider,
-) => {
+  user,
+}: UseBlockEditorProps) => {
   const editor = useEditor(
     {
       immediatelyRender: true,
@@ -23,23 +17,22 @@ export const useBlockEditor = (
       autofocus: true,
       onCreate: ctx => {
         if (ctx.editor.isEmpty) {
-          //   ctx.editor.commands.setContent(content);
           ctx.editor.commands.focus('start', { scrollIntoView: true });
         }
       },
       extensions: [
-        ...ExtensionKit({ provider }),
+        ...ExtensionKit(),
         provider
           ? Collaboration.configure({
-              document: ydoc,
+              document: doc,
             })
           : undefined,
         provider
           ? CollaborationCursor.configure({
               provider,
               user: {
-                name: 'badasukerubin',
-                color: '#fb7185',
+                name: user.name,
+                color: user.color,
               },
             })
           : undefined,
@@ -52,13 +45,8 @@ export const useBlockEditor = (
           class: 'min-h-full',
         },
       },
-      onUpdate: ({ editor }) => {
-        const content = editor.getHTML();
-        // console.log('content', content);
-        // onUpdate();
-      },
     },
-    [content],
+    [],
   );
 
   window.editor = editor;

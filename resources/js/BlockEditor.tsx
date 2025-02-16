@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useRef, useState } from 'react';
+import React, { memo, useEffect, useMemo, useRef } from 'react';
 import { EditorContent } from '@tiptap/react';
 import LinkMenu from './components/menus/LinkMenu/LinkMenu';
 import { useBlockEditor } from './hooks/useBlockEditor';
@@ -10,47 +10,27 @@ import ImageBlockMenu from './extensions/ImageBlock/components/ImageBlockMenu';
 import { Doc } from 'yjs';
 import { HocuspocusProvider } from '@hocuspocus/provider';
 
-export default memo(function BlockEditor({
-  item,
-  resourceRoute,
-  onUpdate,
-  settings,
-}: {
-  resourceRoute: string;
-  settings: any;
-  //   ydoc: Doc;
-}) {
-  const [content, setContent] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchMarkdownContent = async () => {
-      try {
-        const response = await fetch(resourceRoute);
-        const res = await response.json();
-
-        setContent(res.data);
-      } catch (error) {
-        console.error('Error fetching markdown content:', error);
-      }
-    };
-
-    fetchMarkdownContent();
-  }, [resourceRoute]);
-
+export default memo(function BlockEditor({ item, user, resourceRoute }: {}) {
   const menuContainerRef = useRef(null);
 
-  const ydoc = new Doc();
+  const doc = useMemo(() => new Doc(), []);
 
-  const provider = new HocuspocusProvider({
-    url: 'ws://127.0.0.1:2319',
-    name: item.id,
-    document: ydoc,
-    forceSyncInterval: 200,
-  });
+  const provider = useMemo(() => {
+    return new HocuspocusProvider({
+      url: 'ws://127.0.0.1:2319',
+      name: item.id,
+      document: doc,
+      forceSyncInterval: 200,
+      token: 'test-token',
+      parameters: {
+        resourceRoute,
+      },
+    });
+  }, [doc]);
 
-  const { editor } = useBlockEditor(content, onUpdate, ydoc, provider);
+  const { editor } = useBlockEditor({ doc, provider, user });
 
-  if (!editor || !content) {
+  if (!editor) {
     return null;
   }
 

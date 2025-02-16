@@ -1,34 +1,25 @@
 import React, { memo, StrictMode, useMemo } from 'react';
 import BlockEditor from './BlockEditor';
 import {
-  ColorKey,
   Entrance,
   PortalSystemProps,
+  SettingsData,
 } from '@returfs/shared-external-react';
-// import { Doc as YDoc } from 'yjs';
+
+import '../css/app.css';
 
 export default memo(function Extension({
   item,
   resourceRoute,
+  user,
   settings,
-  onUpdate,
 }: PortalSystemProps) {
-  console.log('resourceRoute', resourceRoute);
-
-  //   const ydoc = useMemo(() => new YDoc(), []);
-
-  const themeColor = ColorKey.Gray;
+  console.log('settings', settings);
 
   return (
     <StrictMode>
-      <Entrance themeColor={themeColor}>
-        <BlockEditor
-          item={item}
-          resourceRoute={resourceRoute}
-          settings={settings}
-          onUpdate={onUpdate}
-          // ydoc={ydoc}
-        />
+      <Entrance themeColor={settings[SettingsData.ThemeColor]}>
+        <BlockEditor item={item} user={user} resourceRoute={resourceRoute} />
       </Entrance>
     </StrictMode>
   );
