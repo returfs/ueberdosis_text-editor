@@ -1,25 +1,27 @@
 import React, { memo, StrictMode, useMemo } from 'react';
 import BlockEditor from './BlockEditor';
 import {
+  ColorKey,
   Entrance,
   PortalSystemProps,
-  SettingsData,
+  ResourceSettingsData,
 } from '@returfs/shared-external-react';
 
 import '../css/app.css';
 
 export default memo(function Extension({
-  item,
-  resourceRoute,
-  user,
-  settings,
+  resourceItem,
+  resourceSettings,
+  resourceUser,
 }: PortalSystemProps) {
-  console.log('settings', settings);
-
   return (
     <StrictMode>
-      <Entrance themeColor={settings[SettingsData.ThemeColor]}>
-        <BlockEditor item={item} user={user} resourceRoute={resourceRoute} />
+      <Entrance
+        themeColor={
+          resourceSettings?.[ResourceSettingsData.ThemeColor] as ColorKey
+        }
+      >
+        <BlockEditor resourceItem={resourceItem} resourceUser={resourceUser} />
       </Entrance>
     </StrictMode>
   );

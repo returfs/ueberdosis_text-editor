@@ -8,7 +8,7 @@ import { UseBlockEditorProps } from './types';
 export const useBlockEditor = ({
   doc,
   provider,
-  user,
+  resourceUser,
 }: UseBlockEditorProps) => {
   const editor = useEditor(
     {
@@ -31,8 +31,8 @@ export const useBlockEditor = ({
           ? CollaborationCursor.configure({
               provider,
               user: {
-                name: user.name,
-                color: user.color,
+                name: resourceUser?.name,
+                // color: resourceUser?.color,
               },
             })
           : undefined,

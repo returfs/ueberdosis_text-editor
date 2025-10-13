@@ -1,4 +1,5 @@
-import { TiptapCollabProvider } from '@hocuspocus/provider';
+import { HocuspocusProvider } from '@hocuspocus/provider';
+import { ResourceUser } from '@returfs/shared-external-react';
 import { Editor } from '@tiptap/core';
 import { Doc } from 'yjs';
 
@@ -9,6 +10,7 @@ declare global {
 }
 
 export interface UseBlockEditorProps {
-  ydoc: Doc;
-  provider?: TiptapCollabProvider | null | undefined;
+  doc: Doc;
+  provider?: HocuspocusProvider;
+  resourceUser?: ResourceUser;
 }

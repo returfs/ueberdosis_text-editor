@@ -142,7 +142,7 @@ export const ExtensionKit = () => [
     showOnlyCurrent: false,
     placeholder: () => '',
   }),
-  SlashCommand,
+  //   SlashCommand,
   Focus,
   Figcaption,
   BlockquoteFigure,

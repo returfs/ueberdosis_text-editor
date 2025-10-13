@@ -6,7 +6,7 @@
   "scripts": {
     "build": "vite build",
     "build-watch": "vite build --watch",
-    "dev": "vite --port 7004 --strictPort"
+    "dev": "vite --port 7003 --strictPort"
   },
   "author": "Toluwani Adewale",
   "license": "proprietary",

@@ -15,7 +15,7 @@
 }
 
 .ProseMirror {
-  @apply z-0 mx-auto max-w-screen-xl pl-20 pr-8 caret-black outline-0 lg:pl-24 lg:pr-24 dark:caret-white;
+  @apply z-0 mx-auto max-w-screen-xl pl-12 pr-2 caret-black outline-0 lg:pl-24 lg:pr-24 dark:caret-white;
 
   .selection {
     @apply inline-block;

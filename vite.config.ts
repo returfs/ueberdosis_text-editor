@@ -16,13 +16,11 @@ export default defineConfig({
     },
   },
   server: {
-    port: 7004,
-    origin: 'http://localhost:7004',
+    port: 7003,
+    origin: 'http://localhost:7003',
   },
-  base: 'http://localhost:7004/',
-  plugins: [
-    react(),
-  ],
+  base: 'http://localhost:7003/',
+  plugins: [react()],
   resolve: {
     alias: {
       '@': '/resources/js',
