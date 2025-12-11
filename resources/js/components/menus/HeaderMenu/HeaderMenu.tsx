@@ -1,21 +1,10 @@
-import React from 'react';
-import { Editor } from '@tiptap/react';
-import { memo } from 'react';
-import {
-  Button,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  Separator,
-  Surface,
-} from '@returfs/shared-external-react';
+import { ColorPicker } from '@/components/panels/Colorpicker';
 import {
   Code,
   DotsThreeVertical,
   FileCode,
   Highlighter,
   Palette,
-  Plus,
   TextAlignCenter,
   TextAlignJustify,
   TextAlignLeft,
@@ -27,14 +16,23 @@ import {
   TextSuperscript,
   TextUnderline,
 } from '@phosphor-icons/react';
-import { useTextmenuCommands } from './hooks/useTextmenuCommands';
-import { useTextmenuStates } from './hooks/useTextmenuStates';
-import { useTextmenuContentTypes } from './hooks/useTextmenuContentTypes';
+import {
+  Button,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Separator,
+  Surface,
+} from '@returfs/shared-external-react';
+import { Editor } from '@tiptap/react';
+import React, { memo } from 'react';
 import { ContentTypePicker } from './components/ContentTypePicker';
+import { EditLinkPopover } from './components/EditLinkPopover';
 import { FontFamilyPicker } from './components/FontFamilyPicker';
 import { FontSizePicker } from './components/FontSizePicker';
-import { EditLinkPopover } from './components/EditLinkPopover';
-import { ColorPicker } from '@/components/panels/Colorpicker';
+import { useTextmenuCommands } from './hooks/useTextmenuCommands';
+import { useTextmenuContentTypes } from './hooks/useTextmenuContentTypes';
+import { useTextmenuStates } from './hooks/useTextmenuStates';
 
 // We memorize the button so each button is not rerendered
 // on every editor state change

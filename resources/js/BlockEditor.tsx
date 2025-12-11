@@ -43,14 +43,18 @@ export default memo(function BlockEditor({
   }
 
   return (
-    <div className="flex h-full w-full" ref={menuContainerRef}>
-      <div className="relative flex h-full min-h-screen w-full flex-1 flex-col overflow-hidden">
-        <EntranceHeader
-          fullname={`${resourceItem?.name}.${resourceItem?.extension}`}
-        >
-          <HeaderMenu editor={editor} />
-        </EntranceHeader>
-        <EditorContent className="flex-1 overflow-y-auto" editor={editor} />
+    <div
+      className="flex h-screen w-full flex-col overflow-y-auto"
+      ref={menuContainerRef}
+    >
+      <EntranceHeader
+        fullname={`${resourceItem?.name}.${resourceItem?.extension}`}
+      >
+        <HeaderMenu editor={editor} />
+      </EntranceHeader>
+
+      <div className="relative min-h-screen w-full flex-1 flex-col">
+        <EditorContent className="flex-1" editor={editor} />
         <ContentItemMenu editor={editor} />
         <LinkMenu editor={editor} appendTo={menuContainerRef} />
         <ColumnsMenu editor={editor} appendTo={menuContainerRef} />
