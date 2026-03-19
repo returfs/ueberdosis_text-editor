@@ -1,0 +1,73 @@
+@import 'tailwindcss';
+
+/* Enable class-based dark mode (Tailwind v4) - matches shared-external-react */
+@custom-variant dark (&:is(.dark *));
+
+/* Include shared-external-react source files for class detection */
+@source '../../../../../external/returfs/shared-external-react/src/**/*.{ts,tsx}';
+/* Include local source files for class detection */
+@source '../**/*.{ts,tsx}';
+
+/* Global dark mode text colors for portals (popovers, dropdowns, etc.) */
+@layer base {
+  .dark {
+    color-scheme: dark;
+  }
+
+  .dark body,
+  .dark [data-radix-popper-content-wrapper] {
+    color: theme('colors.gray.200');
+  }
+}
+
+@import './editor.css';
+
+@import './partials/animations.css';
+@import './partials/blocks.css';
+@import './partials/code.css';
+@import './partials/lists.css';
+@import './partials/placeholder.css';
+@import './partials/table.css';
+@import './partials/typography.css';
+
+.react-colorful {
+  width: 100% !important;
+}
+
+.ProseMirror {
+  @apply z-0 mx-auto max-w-screen-xl pl-12 pr-2 caret-black outline-0 lg:pl-24 lg:pr-24 dark:caret-white;
+
+  .selection {
+    @apply inline-block;
+  }
+
+  .selection,
+  *::selection {
+    @apply inline-block bg-black/10 dark:bg-white/20;
+  }
+
+  & > .react-renderer {
+    @apply my-12 first:mt-0 last:mb-0;
+  }
+
+  &.resize-cursor {
+    @apply cursor-col-resize;
+  }
+
+  .ProseMirror-gapcursor {
+    @apply relative mx-auto w-full max-w-screen-xl;
+
+    &:after {
+      @apply -top-[1.5em] left-0 right-0 mx-auto w-full max-w-screen-xl border-t-black/40 dark:border-t-white/40;
+    }
+  }
+}
+
+[data-reference-hidden] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+[data-theme='slash-command'] {
+  width: 1000vw;
+}
