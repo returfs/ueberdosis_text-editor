@@ -1,10 +1,10 @@
 {
   "latestErrorEvent": {
     "code": "TYPE-001",
-    "message": "Failed to generate type declaration. Execute the below cmd to reproduce and fix the error. #TYPE-001\nargs: {\"cmd\":\"npx tsc --project /Users/badasukerubin/code/laravel/returfs/marketplace/internal/extensions/text-editor/node_modules/.federation/tsconfig.baf104207bf101535a87281e3b40f15a.json\"}\nView the docs to see how to solve: https://module-federation.io/guide/troubleshooting/type#type-001",
+    "message": "Failed to generate type declaration. Execute the below cmd to reproduce and fix the error. #TYPE-001\nargs: {\"cmd\":\"npx tsc --project /Users/badasukerubin/code/laravel/returfs/marketplace/internal/extensions/text-editor/node_modules/.federation/tsconfig.adcf10df7f2be169094915450dd64b9a.json\"}\nView the docs to see how to solve: https://module-federation.io/guide/troubleshooting/type#type-001",
     "args": {
-      "cmd": "npx tsc --project /Users/badasukerubin/code/laravel/returfs/marketplace/internal/extensions/text-editor/node_modules/.federation/tsconfig.baf104207bf101535a87281e3b40f15a.json"
+      "cmd": "npx tsc --project /Users/badasukerubin/code/laravel/returfs/marketplace/internal/extensions/text-editor/node_modules/.federation/tsconfig.adcf10df7f2be169094915450dd64b9a.json"
     },
-    "timestamp": 1774144799172
+    "timestamp": 1774902793321
   }
 }
