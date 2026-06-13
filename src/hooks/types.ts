@@ -2,6 +2,7 @@ import { HocuspocusProvider } from '@hocuspocus/provider';
 import { ResourceUser } from '@returfs/shared-external-react';
 import { Editor } from '@tiptap/core';
 import { Doc } from 'yjs';
+import type { DocumentType } from '@/document-types';
 
 declare global {
   interface Window {
@@ -13,4 +14,6 @@ export interface UseBlockEditorProps {
   doc: Doc;
   provider?: HocuspocusProvider;
   resourceUser?: ResourceUser;
+  /** Active document type — its `extensions()` define the editor schema. */
+  documentType: DocumentType;
 }

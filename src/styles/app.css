@@ -37,13 +37,13 @@
 .ProseMirror {
   @apply z-0 mx-auto max-w-screen-xl pl-12 pr-2 caret-black outline-0 lg:pl-24 lg:pr-24 dark:caret-white;
 
-  .selection {
-    @apply inline-block;
-  }
-
+  /* `.selection` is the decoration the Selection extension draws while the
+     editor is BLURRED (out of focus). `inline-block` made it render as a boxy
+     pill and washed out the text in dark mode — keep it a flat, translucent
+     highlight that matches the native focused selection. */
   .selection,
   *::selection {
-    @apply inline-block bg-black/10 dark:bg-white/20;
+    @apply bg-black/20 dark:bg-white/30;
   }
 
   & > .react-renderer {
