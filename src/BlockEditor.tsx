@@ -1,7 +1,7 @@
 import { HocuspocusProvider } from '@hocuspocus/provider';
 import { EntranceHeader } from '@returfs/shared-external-react';
 import { EditorContent } from '@tiptap/react';
-import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
+import React, { memo, useEffect, useRef, useState } from 'react';
 import { Doc } from 'yjs';
 import { ReconciliationDialog } from './components/ReconciliationDialog';
 import { ContentItemMenu } from './components/menus/ContentItemMenu';
@@ -26,13 +26,21 @@ const documentType = DEFAULT_DOCUMENT_TYPE;
  * Tiptap editor are all recreated and re-seed from the externally edited plain
  * file. Keeping this in a wrapper avoids the stale-doc problem of swapping the
  * doc under a long-lived `useEditor`.
+ *
+ * CRITICAL: the key also includes the resource id. The inner instance's Yjs doc
+ * is `useMemo(() => new Doc(), [])` (created once), while its provider is keyed
+ * on `resourceItem.id`. If we keyed only on the nonce, switching documents
+ * (without unmounting this component) would keep the PREVIOUS file's doc and
+ * bind a NEW provider to it — pushing one document's content into another (cross
+ * -document contamination) and racing the synced gate. Keying on the id forces a
+ * full remount per file so the doc/provider/editor are always in lockstep.
  */
 export default memo(function BlockEditor(props: BlockEditorProps) {
   const [reloadNonce, setReloadNonce] = useState(0);
 
   return (
     <BlockEditorInstance
-      key={reloadNonce}
+      key={`${props.resourceItem?.id ?? 'none'}:${reloadNonce}`}
       {...props}
       onRequestReload={() => setReloadNonce(n => n + 1)}
     />
@@ -55,74 +63,82 @@ function BlockEditorInstance({
   resourceUser,
   onRequestReload,
 }: BlockEditorInstanceProps) {
-  const doc = useMemo(() => new Doc(), []);
-
   // Get API key for developer mode authentication
   const apiKey = import.meta.env.VITE_RETURFS_API_KEY;
 
-  const provider = useMemo(() => {
-    if (!resourceItem?.id || !resourceItem?.route) {
-      return null;
-    }
-    return new HocuspocusProvider({
+  // The Yjs doc + Hocuspocus provider are created INSIDE the effect below (not
+  // useMemo) and held in state, so their lifecycle is tied to that effect's
+  // cleanup. This is StrictMode-safe: React 18 dev mounts → unmounts → remounts,
+  // and the cleanup calls provider.destroy(). With useMemo the SAME (now dead)
+  // provider would be reused on the remount (useMemo isn't recomputed) → a
+  // destroyed socket that never syncs → permanent "Couldn't connect". Creating a
+  // fresh pair per effect run guarantees the live provider is always connected.
+  const [conn, setConn] = useState<{
+    doc: Doc;
+    provider: HocuspocusProvider;
+  } | null>(null);
+
+  // Gate the editor on the FIRST sync: mount Tiptap only after the provider has
+  // synced so it binds to an already-populated Yjs doc. Mounting on an empty doc
+  // makes the Collaboration extension seed an empty paragraph that then MERGES
+  // with the incoming server state (stray blank line / duplicated content on
+  // reopen). If sync never completes we show a Retry error, never mount empty.
+  const [ready, setReady] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  const resourceId = resourceItem?.id;
+  const resourceRoute = resourceItem?.route;
+  const resourceUpdateRoute = resourceItem?.updateRoute;
+
+  useEffect(() => {
+    if (!resourceId || !resourceRoute) return;
+
+    const doc = new Doc();
+    const provider = new HocuspocusProvider({
       url: import.meta.env.VITE_HOCUSPOCUS_URL,
-      name: resourceItem.id,
+      name: resourceId,
       document: doc,
       // No forceSyncInterval: it forces a full sync 5×/sec forever (constant
       // CPU even while idle — spins the fan). Yjs already syncs on changes.
       token: 'test-token',
       parameters: {
-        resourceRoute: resourceItem.route,
-        resourceUpdateRoute: resourceItem.updateRoute,
+        resourceRoute,
+        resourceUpdateRoute,
         apiKey: apiKey || '',
         documentType: documentType.id,
       },
     });
-  }, [
-    doc,
-    resourceItem?.id,
-    resourceItem?.route,
-    resourceItem?.updateRoute,
-    apiKey,
-  ]);
 
-  // Disconnect + free resources when this instance unmounts (e.g. on reload
-  // remount or closing the tab). Destroy the provider first, then the Yjs doc,
-  // so observers and the websocket are released and not leaked.
-  useEffect(
-    () => () => {
-      provider?.destroy();
-      doc.destroy();
-    },
-    [provider, doc],
-  );
+    setConn({ doc, provider });
+    setReady(provider.isSynced);
+    setFailed(false);
 
-  // Mount the editor ONLY after the first server sync, so it binds to the
-  // already-populated Yjs doc. Critically, we must NEVER mount on an unsynced
-  // (empty) doc: the Collaboration extension would seed an empty paragraph that
-  // then MERGES with the server state when it arrives, duplicating content on
-  // every navigation (a → a a → a\na a …). If sync never completes we show a
-  // connection error with Retry — we do not fall back to mounting empty.
-  const [ready, setReady] = useState(() => provider?.isSynced ?? false);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    if (!provider) return;
-    if (provider.isSynced) {
-      setReady(true);
-      return;
-    }
     const onSynced = () => setReady(true);
     provider.on('synced', onSynced);
     const timeout = setTimeout(() => setFailed(true), 10000);
-    return () => {
-      provider.off('synced', onSynced);
-      clearTimeout(timeout);
-    };
-  }, [provider]);
 
-  if (!provider) {
+    return () => {
+      clearTimeout(timeout);
+      provider.off('synced', onSynced);
+      // Destroy the provider first (closes the socket + releases observers),
+      // then the Yjs doc. Reset state so a remount rebuilds from scratch.
+      provider.destroy();
+      doc.destroy();
+      setConn(null);
+      setReady(false);
+    };
+  }, [resourceId, resourceRoute, resourceUpdateRoute, apiKey]);
+
+  if (!resourceId || !resourceRoute) {
     return null;
+  }
+
+  if (!conn) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center text-sm text-neutral-400">
+        Loading…
+      </div>
+    );
   }
 
   if (!ready && failed) {
@@ -150,8 +166,8 @@ function BlockEditorInstance({
 
   return (
     <EditorSurface
-      doc={doc}
-      provider={provider}
+      doc={conn.doc}
+      provider={conn.provider}
       resourceItem={resourceItem}
       resourceUser={resourceUser}
       apiKey={apiKey}
