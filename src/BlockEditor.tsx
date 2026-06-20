@@ -43,13 +43,18 @@ interface BlockEditorInstanceProps extends BlockEditorProps {
   onRequestReload: () => void;
 }
 
+/**
+ * Owns the Yjs doc + Hocuspocus provider, and gates the editor on the FIRST
+ * sync. Creating the Tiptap editor only after the provider has synced means it
+ * binds to an already-populated Yjs document — instead of binding to an empty
+ * one whose default empty paragraph then MERGES with the incoming server state,
+ * which is what left a stray blank line above the content on (re)open.
+ */
 function BlockEditorInstance({
   resourceItem,
   resourceUser,
   onRequestReload,
 }: BlockEditorInstanceProps) {
-  const menuContainerRef = useRef(null);
-
   const doc = useMemo(() => new Doc(), []);
 
   // Get API key for developer mode authentication
@@ -92,6 +97,85 @@ function BlockEditorInstance({
     [provider, doc],
   );
 
+  // Mount the editor ONLY after the first server sync, so it binds to the
+  // already-populated Yjs doc. Critically, we must NEVER mount on an unsynced
+  // (empty) doc: the Collaboration extension would seed an empty paragraph that
+  // then MERGES with the server state when it arrives, duplicating content on
+  // every navigation (a → a a → a\na a …). If sync never completes we show a
+  // connection error with Retry — we do not fall back to mounting empty.
+  const [ready, setReady] = useState(() => provider?.isSynced ?? false);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    if (!provider) return;
+    if (provider.isSynced) {
+      setReady(true);
+      return;
+    }
+    const onSynced = () => setReady(true);
+    provider.on('synced', onSynced);
+    const timeout = setTimeout(() => setFailed(true), 10000);
+    return () => {
+      provider.off('synced', onSynced);
+      clearTimeout(timeout);
+    };
+  }, [provider]);
+
+  if (!provider) {
+    return null;
+  }
+
+  if (!ready && failed) {
+    return (
+      <div className="flex h-screen w-full flex-col items-center justify-center gap-3 text-sm text-neutral-400">
+        <span>Couldn’t connect to the collaboration server.</span>
+        <button
+          type="button"
+          onClick={onRequestReload}
+          className="rounded-md border border-neutral-300 px-3 py-1.5 text-neutral-700 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (!ready) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center text-sm text-neutral-400">
+        Loading…
+      </div>
+    );
+  }
+
+  return (
+    <EditorSurface
+      doc={doc}
+      provider={provider}
+      resourceItem={resourceItem}
+      resourceUser={resourceUser}
+      apiKey={apiKey}
+      onRequestReload={onRequestReload}
+    />
+  );
+}
+
+interface EditorSurfaceProps extends BlockEditorInstanceProps {
+  doc: Doc;
+  provider: HocuspocusProvider;
+  apiKey?: string;
+}
+
+function EditorSurface({
+  doc,
+  provider,
+  resourceItem,
+  resourceUser,
+  apiKey,
+  onRequestReload,
+}: EditorSurfaceProps) {
+  const menuContainerRef = useRef(null);
+
   const { editor } = useBlockEditor({
     doc,
     provider,
@@ -109,7 +193,7 @@ function BlockEditorInstance({
     onReload: onRequestReload,
   });
 
-  if (!editor || !provider) {
+  if (!editor) {
     return null;
   }
 
