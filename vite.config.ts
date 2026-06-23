@@ -49,8 +49,31 @@ export default defineConfig(({ mode }: ConfigEnv) => {
         '@': path.resolve(__dirname, 'src'),
       },
     },
-    // Exclude workspace packages from optimization to use pre-built dist
     optimizeDeps: {
+      // Scan the federated entry (and standalone main) so Vite discovers the
+      // whole dependency graph at server START and pre-bundles it in one pass.
+      // Without this, the heavy Tiptap graph is discovered lazily on first load,
+      // triggering "optimized dependencies changed → reloading" mid-load — a full
+      // page reload that tanks first paint (and caused stale-chunk 404s).
+      entries: ['./src/Extension.tsx', './src/main.tsx'],
+      // Force-prebundle the big/many runtime deps + the late-discovered
+      // react-dom/client (pulled by the excluded SDK), so none of them get
+      // optimized lazily after the page is already loading.
+      include: [
+        'react-dom/client',
+        'yjs',
+        'lowlight',
+        '@hocuspocus/provider',
+        'framer-motion',
+        'tippy.js',
+        'react-colorful',
+        '@phosphor-icons/react',
+        '@tiptap/core',
+        '@tiptap/react',
+        '@tiptap/starter-kit',
+        '@tiptap/suggestion',
+      ],
+      // Workspace package: use its pre-built dist instead of optimizing.
       exclude: ['@returfs/extension-sdk'],
     },
     server: {

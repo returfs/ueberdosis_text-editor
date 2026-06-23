@@ -3,6 +3,17 @@ import { Editor } from '@tiptap/react';
 import { useCallback } from 'react';
 
 export const useTextmenuCommands = (editor: Editor) => {
+  // Collaborative undo/redo: with StarterKit history disabled, these resolve to
+  // the Yjs UndoManager (Collaboration extension), so each user undoes only
+  // their OWN edits — correct multi-user behaviour.
+  const onUndo = useCallback(
+    () => editor.chain().focus().undo().run(),
+    [editor],
+  );
+  const onRedo = useCallback(
+    () => editor.chain().focus().redo().run(),
+    [editor],
+  );
   const onBold = useCallback(
     () => editor.chain().focus().toggleBold().run(),
     [editor],
@@ -181,6 +192,8 @@ export const useTextmenuCommands = (editor: Editor) => {
   );
 
   return {
+    onUndo,
+    onRedo,
     onBold,
     onItalic,
     onStrike,

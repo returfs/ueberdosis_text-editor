@@ -1,5 +1,7 @@
 import { ColorPicker } from '@/components/panels/Colorpicker';
 import {
+  ArrowClockwise,
+  ArrowCounterClockwise,
   Code,
   DotsThreeVertical,
   FileCode,
@@ -53,6 +55,26 @@ export const HeaderMenu = ({ editor }: TextMenuProps) => {
 
   return (
     <div className="flex h-full flex-row items-center gap-1 overflow-x-scroll p-1 leading-none lg:gap-2">
+      <MemoButton
+        size="icon"
+        variant="outline"
+        className="shrink-0"
+        onClick={commands.onUndo}
+      >
+        <ArrowCounterClockwise alt="Undo" />
+      </MemoButton>
+
+      <MemoButton
+        size="icon"
+        variant="outline"
+        className="shrink-0"
+        onClick={commands.onRedo}
+      >
+        <ArrowClockwise alt="Redo" />
+      </MemoButton>
+
+      <Separator orientation="vertical" className="h-8" />
+
       <MemoContentTypePicker options={blockOptions} />
       <MemoFontFamilyPicker
         onChange={commands.onSetFont}

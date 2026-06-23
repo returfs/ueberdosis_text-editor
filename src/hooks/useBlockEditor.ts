@@ -35,8 +35,13 @@ export const useBlockEditor = ({
           ? CollaborationCursor.configure({
               provider,
               user: {
-                name: resourceUser?.name,
-                // color: resourceUser?.color,
+                name: resourceUser?.name ?? 'Anonymous',
+                // Caret + label colour. Falls back to the app amber so the
+                // inline `background-color`/`border-color` are always defined
+                // (an undefined colour left the label unstyled).
+                color:
+                  (resourceUser as { color?: string } | undefined)?.color ??
+                  '#f59e0b',
               },
             })
           : undefined,

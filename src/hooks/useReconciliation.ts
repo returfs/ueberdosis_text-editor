@@ -42,8 +42,8 @@ interface UseReconciliationParams {
   route?: string;
   /** PUT route for the resource (used by keep-mine). */
   updateRoute?: string;
-  /** Developer API key (Bearer). */
-  apiKey?: string;
+  /** Async auth-token getter (collab token in prod, dev rfsk_ key standalone). */
+  getToken?: () => Promise<string>;
   /** Active document type id — selects the right sidecar server-side. */
   documentType: string;
   /** The Tiptap editor — source of the plain export for keep-mine. */
@@ -57,7 +57,7 @@ interface UseReconciliationParams {
 export function useReconciliation({
   route,
   updateRoute,
-  apiKey,
+  getToken,
   documentType,
   editor,
   doc,
@@ -67,12 +67,17 @@ export function useReconciliation({
   const [busy, setBusy] = useState(false);
 
   const authHeaders = useCallback(
-    (extra: Record<string, string> = {}): Record<string, string> => ({
-      Accept: 'application/json',
-      ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
-      ...extra,
-    }),
-    [apiKey],
+    async (
+      extra: Record<string, string> = {},
+    ): Promise<Record<string, string>> => {
+      const token = getToken ? await getToken() : '';
+      return {
+        Accept: 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...extra,
+      };
+    },
+    [getToken],
   );
 
   // Append the document type so the server resolves the right rich sidecar.
@@ -92,7 +97,7 @@ export function useReconciliation({
     (async () => {
       try {
         const response = await fetch(withType(buildUrl(route)), {
-          headers: authHeaders(),
+          headers: await authHeaders(),
         });
         if (!response.ok) return;
         const data = await response.json();
@@ -121,7 +126,7 @@ export function useReconciliation({
 
       await fetch(buildUrl(updateRoute), {
         method: 'PUT',
-        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        headers: await authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           content,
           encoding: 'base64',
@@ -142,7 +147,7 @@ export function useReconciliation({
     try {
       await fetch(withType(`${buildUrl(updateRoute)}/sidecar`), {
         method: 'DELETE',
-        headers: authHeaders(),
+        headers: await authHeaders(),
       });
       setExternalChange(false);
       onReload();

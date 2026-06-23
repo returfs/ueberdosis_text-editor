@@ -1,9 +1,10 @@
 import { HocuspocusProvider } from '@hocuspocus/provider';
 import { EntranceHeader } from '@returfs/shared-external-react';
 import { EditorContent } from '@tiptap/react';
-import React, { memo, useEffect, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { Doc } from 'yjs';
 import { ReconciliationDialog } from './components/ReconciliationDialog';
+import { SaveStatus } from './components/SaveStatus';
 import { ContentItemMenu } from './components/menus/ContentItemMenu';
 import { HeaderMenu } from './components/menus/HeaderMenu';
 import LinkMenu from './components/menus/LinkMenu/LinkMenu';
@@ -13,6 +14,7 @@ import { TableColumnMenu, TableRowMenu } from './extensions/Table/menus';
 import { DEFAULT_DOCUMENT_TYPE } from './document-types';
 import { useBlockEditor } from './hooks/useBlockEditor';
 import { useReconciliation } from './hooks/useReconciliation';
+import { useSaveStatus } from './hooks/useSaveStatus';
 import { BlockEditorProps } from './types';
 
 // The document type this package operates as. The form-builder package (a
@@ -63,8 +65,50 @@ function BlockEditorInstance({
   resourceUser,
   onRequestReload,
 }: BlockEditorInstanceProps) {
-  // Get API key for developer mode authentication
-  const apiKey = import.meta.env.VITE_RETURFS_API_KEY;
+  const resourceId = resourceItem?.id;
+
+  // AUTH (Phase 4). Two paths, decided by whether the host supplied a collab
+  // token URL:
+  //  - Production (installed/federated): the host passes `collabTokenUrl`. We
+  //    POST it (same-origin, the host's BFF adds the user's session cookie) to
+  //    mint a short-lived, per-user, per-resource token — no key in the bundle.
+  //  - Standalone dev: a developer testing their own extension uses their own
+  //    rfsk_ developer key (VITE_RETURFS_API_KEY) as the token.
+  // getToken is passed to HocuspocusProvider, which calls it on connect AND
+  // reconnect, so an expired token is transparently refreshed.
+  const collabTokenUrl = (
+    resourceItem as { collabTokenUrl?: string } | undefined
+  )?.collabTokenUrl;
+  const devApiKey = import.meta.env.VITE_RETURFS_API_KEY as string | undefined;
+  const apiBase =
+    (import.meta.env.VITE_RETURFS_API_URL as string | undefined) ||
+    'http://project.test';
+
+  const getToken = useCallback(async (): Promise<string> => {
+    if (collabTokenUrl) {
+      const res = await fetch(collabTokenUrl, {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+      });
+      if (!res.ok) {
+        throw new Error('Failed to obtain collaboration token');
+      }
+      const json = await res.json();
+      const token = json?.data?.token ?? json?.token;
+      if (!token) {
+        throw new Error('Collaboration token missing in response');
+      }
+      return token as string;
+    }
+    return devApiKey ?? '';
+  }, [collabTokenUrl, devApiKey]);
+
+  // Resource route the CLIENT (reconciliation) hits directly: the collab API in
+  // production, the developer API in standalone dev. The Hocuspocus server builds
+  // its OWN routes from the document id — it never trusts a client-supplied one.
+  const resourceRoute = collabTokenUrl
+    ? `${apiBase}/api/v1/collab/item-instances/${resourceId}/resource`
+    : `${apiBase}/api/v1/developer/item-instances/${resourceId}/resource`;
 
   // The Yjs doc + Hocuspocus provider are created INSIDE the effect below (not
   // useMemo) and held in state, so their lifecycle is tied to that effect's
@@ -86,12 +130,8 @@ function BlockEditorInstance({
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
 
-  const resourceId = resourceItem?.id;
-  const resourceRoute = resourceItem?.route;
-  const resourceUpdateRoute = resourceItem?.updateRoute;
-
   useEffect(() => {
-    if (!resourceId || !resourceRoute) return;
+    if (!resourceId) return;
 
     const doc = new Doc();
     const provider = new HocuspocusProvider({
@@ -100,11 +140,11 @@ function BlockEditorInstance({
       document: doc,
       // No forceSyncInterval: it forces a full sync 5×/sec forever (constant
       // CPU even while idle — spins the fan). Yjs already syncs on changes.
-      token: 'test-token',
+      // token is a function → Hocuspocus refreshes it on each (re)connect.
+      token: getToken,
+      // Only the document type is sent; auth + route are derived server-side
+      // from the verified token (the client can't point us at another resource).
       parameters: {
-        resourceRoute,
-        resourceUpdateRoute,
-        apiKey: apiKey || '',
         documentType: documentType.id,
       },
     });
@@ -127,9 +167,9 @@ function BlockEditorInstance({
       setConn(null);
       setReady(false);
     };
-  }, [resourceId, resourceRoute, resourceUpdateRoute, apiKey]);
+  }, [resourceId, getToken]);
 
-  if (!resourceId || !resourceRoute) {
+  if (!resourceId) {
     return null;
   }
 
@@ -170,7 +210,8 @@ function BlockEditorInstance({
       provider={conn.provider}
       resourceItem={resourceItem}
       resourceUser={resourceUser}
-      apiKey={apiKey}
+      getToken={getToken}
+      resourceRoute={resourceRoute}
       onRequestReload={onRequestReload}
     />
   );
@@ -179,7 +220,10 @@ function BlockEditorInstance({
 interface EditorSurfaceProps extends BlockEditorInstanceProps {
   doc: Doc;
   provider: HocuspocusProvider;
-  apiKey?: string;
+  /** Async auth-token getter (collab token in prod, dev rfsk_ key standalone). */
+  getToken: () => Promise<string>;
+  /** Absolute resource route the client reconciliation calls (collab/dev). */
+  resourceRoute: string;
 }
 
 function EditorSurface({
@@ -187,7 +231,8 @@ function EditorSurface({
   provider,
   resourceItem,
   resourceUser,
-  apiKey,
+  getToken,
+  resourceRoute,
   onRequestReload,
 }: EditorSurfaceProps) {
   const menuContainerRef = useRef(null);
@@ -200,14 +245,16 @@ function EditorSurface({
   });
 
   const { externalChange, busy, keepMine, reloadExternal } = useReconciliation({
-    route: resourceItem?.route,
-    updateRoute: resourceItem?.updateRoute,
-    apiKey,
+    route: resourceRoute,
+    updateRoute: resourceRoute,
+    getToken,
     documentType: documentType.id,
     editor,
     doc,
     onReload: onRequestReload,
   });
+
+  const saveState = useSaveStatus(provider);
 
   if (!editor) {
     return null;
@@ -221,6 +268,7 @@ function EditorSurface({
       <EntranceHeader
         fullname={`${resourceItem?.name}.${resourceItem?.extension}`}
       >
+        <SaveStatus state={saveState} />
         <HeaderMenu editor={editor} />
       </EntranceHeader>
 
