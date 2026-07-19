@@ -17,7 +17,7 @@ const FONT_SIZES = [
 ];
 
 export type FontSizePickerProps = {
-  onChange: (value: string) => void; // eslint-disable-line no-unused-vars
+  onChange: (value: string) => void;
   value: string;
 };
 
@@ -35,7 +35,8 @@ export const FontSizePicker = ({ onChange, value }: FontSizePickerProps) => {
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
-          className="h-8"
+          size="sm"
+          className="h-7"
           isActive={!!currentValue?.value}
         >
           {currentSizeLabel}

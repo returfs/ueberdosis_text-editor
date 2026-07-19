@@ -9,6 +9,12 @@ export const useTextmenuStates = (editor: Editor) => {
     editor,
     selector: ctx => {
       return {
+        // History availability (Yjs UndoManager via the Collaboration ext) —
+        // drives the disabled state of the undo/redo controls.
+        canUndo: ctx.editor.can().undo(),
+        canRedo: ctx.editor.can().redo(),
+        // Drives the View → Editable toggle.
+        isEditable: ctx.editor.isEditable,
         isBold: ctx.editor.isActive('bold'),
         isItalic: ctx.editor.isActive('italic'),
         isStrike: ctx.editor.isActive('strike'),

@@ -3,6 +3,7 @@ import {
   Button,
   ColorButton,
   HexColorKey,
+  Input,
 } from '@returfs/shared-external-react';
 import React, { useCallback, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
@@ -46,9 +47,8 @@ export const ColorPicker = ({ color, onChange, onClear }: ColorPickerProps) => {
         color={color || ''}
         onChange={onChange}
       />
-      <input
+      <Input
         type="text"
-        className="w-full rounded border border-neutral-200 bg-white p-2 text-black focus:outline-1 focus:outline-neutral-300 focus:ring-0 dark:border-neutral-800 dark:bg-black dark:text-white dark:focus:outline-neutral-700"
         placeholder="#000000"
         value={colorInputValue}
         onChange={handleColorUpdate}

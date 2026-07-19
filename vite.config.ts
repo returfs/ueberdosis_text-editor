@@ -39,6 +39,14 @@ export default defineConfig(({ mode }: ConfigEnv) => {
                   singleton: true,
                   requiredVersion: '^19.0.0',
                 },
+                // Shared as a true federation singleton so the extension and the
+                // host resolve the SAME module instance — critical for the shared
+                // view-mode store (Maximize/Full Screen) to reach the host shell.
+                // (Previously only `external`, which gave each side its own copy.)
+                '@returfs/shared-external-react': {
+                  singleton: true,
+                  requiredVersion: '*',
+                },
               },
             }),
           ]
@@ -102,9 +110,10 @@ export default defineConfig(({ mode }: ConfigEnv) => {
         modulePreload: true,
         target: 'esnext',
         minify: true as const,
-        rollupOptions: {
-          external: ['@returfs/shared-external-react'],
-        },
+        // `@returfs/shared-external-react` is no longer listed here — the
+        // federation `shared` config above externalizes it AND wires it to the
+        // host's share scope (a plain rollup `external` did not, so host and
+        // extension ended up with separate module instances / stores).
       },
       experimental: {
         renderBuiltUrl() {

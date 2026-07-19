@@ -28,7 +28,7 @@
     "@module-federation/vite": "^1.0.0",
     "@phosphor-icons/react": "^2.1.7",
     "@returfs/extension-sdk": "workspace:*",
-    "@returfs/shared-external-react": "file:../../../external/returfs/shared-external-react/returfs-shared-external-react-0.3.16.tgz",
+    "@returfs/shared-external-react": "file:../../../external/extension-packages/shared-external-react/returfs-shared-external-react-0.4.5.tgz",
     "@tiptap-pro/extension-details": "2.10.11",
     "@tiptap-pro/extension-details-content": "2.10.11",
     "@tiptap-pro/extension-details-summary": "2.10.11",

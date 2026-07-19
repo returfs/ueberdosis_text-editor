@@ -40,7 +40,7 @@ const FONT_FAMILIES = FONT_FAMILY_GROUPS.flatMap(group => [
 ]).flat();
 
 export type FontFamilyPickerProps = {
-  onChange: (value: string) => void; // eslint-disable-line no-unused-vars
+  onChange: (value: string) => void;
   value: string;
 };
 
@@ -60,8 +60,9 @@ export const FontFamilyPicker = ({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          className="h-8"
+          className="h-7"
           variant="outline"
+          size="sm"
           isActive={!!currentValue?.value}
         >
           {currentFontLabel}

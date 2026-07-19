@@ -1,12 +1,18 @@
 import { HocuspocusProvider } from '@hocuspocus/provider';
-import { EntranceHeader } from '@returfs/shared-external-react';
-import { EditorContent } from '@tiptap/react';
+import {
+  Button,
+  EntranceHeader,
+  SaveStatus,
+  useExtensionMenuBar,
+} from '@returfs/shared-external-react';
+import { EditorContent, Editor } from '@tiptap/react';
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { Doc } from 'yjs';
 import { ReconciliationDialog } from './components/ReconciliationDialog';
-import { SaveStatus } from './components/SaveStatus';
 import { ContentItemMenu } from './components/menus/ContentItemMenu';
-import { HeaderMenu } from './components/menus/HeaderMenu';
+import { useEditorMenuBarMenus } from './components/menus/HeaderMenu/useEditorMenuBarMenus';
+import { useHeaderMenuNodes } from './components/menus/HeaderMenu/useHeaderMenuNodes';
+import { manifest } from './manifest';
 import LinkMenu from './components/menus/LinkMenu/LinkMenu';
 import { ColumnsMenu } from './components/menus/MultiColumn/menus';
 import ImageBlockMenu from './extensions/ImageBlock/components/ImageBlockMenu';
@@ -175,7 +181,7 @@ function BlockEditorInstance({
 
   if (!conn) {
     return (
-      <div className="flex h-screen w-full items-center justify-center text-sm text-neutral-400">
+      <div className="flex h-full w-full items-center justify-center text-sm text-neutral-400">
         Loading…
       </div>
     );
@@ -183,22 +189,18 @@ function BlockEditorInstance({
 
   if (!ready && failed) {
     return (
-      <div className="flex h-screen w-full flex-col items-center justify-center gap-3 text-sm text-neutral-400">
+      <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-sm text-neutral-400">
         <span>Couldn’t connect to the collaboration server.</span>
-        <button
-          type="button"
-          onClick={onRequestReload}
-          className="rounded-md border border-neutral-300 px-3 py-1.5 text-neutral-700 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
-        >
+        <Button type="button" variant="outline" onClick={onRequestReload}>
           Retry
-        </button>
+        </Button>
       </div>
     );
   }
 
   if (!ready) {
     return (
-      <div className="flex h-screen w-full items-center justify-center text-sm text-neutral-400">
+      <div className="flex h-full w-full items-center justify-center text-sm text-neutral-400">
         Loading…
       </div>
     );
@@ -216,6 +218,45 @@ function BlockEditorInstance({
     />
   );
 }
+
+/**
+ * Header bar, split into its own component so the declarative-menu hook
+ * (`useHeaderMenuNodes`, which reads editor state) only runs once a non-null
+ * editor exists — keeping it out of `EditorSurface`'s pre-guard hook order.
+ */
+const EditorHeader = memo(function EditorHeader({
+  editor,
+  fullname,
+  fileBaseName,
+  saveState,
+}: {
+  editor: Editor;
+  fullname: string;
+  fileBaseName: string;
+  saveState: ReturnType<typeof useSaveStatus>;
+}) {
+  const menu = useHeaderMenuNodes(editor);
+  const menus = useEditorMenuBarMenus(editor, fileBaseName);
+  // returfs owns the App menu (name + About); the extension fills File/Edit/View.
+  const { menubar, aboutDialog } = useExtensionMenuBar({ manifest, menus });
+  return (
+    <>
+      <EntranceHeader
+        fullname={fullname}
+        menubar={menubar}
+        menu={menu}
+        end={
+          // Collab semantics: an error here is the connection, not a write.
+          <SaveStatus
+            state={saveState}
+            labels={{ error: 'Connection error' }}
+          />
+        }
+      />
+      {aboutDialog}
+    </>
+  );
+});
 
 interface EditorSurfaceProps extends BlockEditorInstanceProps {
   doc: Doc;
@@ -262,17 +303,22 @@ function EditorSurface({
 
   return (
     <div
-      className="flex h-screen w-full flex-col overflow-y-auto"
+      className="flex h-full w-full flex-col overflow-hidden"
       ref={menuContainerRef}
     >
-      <EntranceHeader
+      <EditorHeader
+        editor={editor}
         fullname={`${resourceItem?.name}.${resourceItem?.extension}`}
-      >
-        <SaveStatus state={saveState} />
-        <HeaderMenu editor={editor} />
-      </EntranceHeader>
+        fileBaseName={resourceItem?.name ?? 'document'}
+        saveState={saveState}
+      />
 
-      <div className="relative min-h-screen w-full flex-1 flex-col">
+      {/* The ONLY scroll area. The header above is a flex sibling (outside this
+          container) so it stays fixed. The surface itself is h-full + overflow
+          -hidden, so it fits the portal exactly and the host no longer adds a
+          second scrollbar — only this inner area scrolls. flex-1 keeps the
+          editor filling the height so the empty area stays clickable. */}
+      <div className="relative flex min-h-0 w-full flex-1 flex-col overflow-y-auto">
         <EditorContent className="flex-1" editor={editor} />
         <ContentItemMenu editor={editor} />
         <LinkMenu editor={editor} appendTo={menuContainerRef} />

@@ -9,38 +9,9 @@ import {
 
 import './styles/app.css';
 
-// Extension manifest for the host application
-// This is exported alongside the default component
-export const manifest = {
-  id: 'ueberdosis_text-editor',
-  name: 'text-editor',
-  displayName: 'Text Editor',
-  version: '1.0.0',
-  description:
-    'Collaborative rich text editor powered by Tiptap and Hocuspocus',
-  author: 'Ueberdosis',
-  type: 'internal-returfs',
-
-  // Capabilities this extension requires
-  capabilities: ['read-resource', 'write-resource', 'realtime-collaboration'],
-
-  // This extension manages its own updates via Hocuspocus
-  updateStrategy: 'self-managed',
-
-  // Supported file types
-  supportedTypes: [
-    'text/plain',
-    'text/html',
-    'text/markdown',
-    'application/json',
-  ],
-
-  // Hocuspocus specific configuration
-  realtimeConfig: {
-    provider: 'hocuspocus',
-    requiresWebSocket: true,
-  },
-};
+// Extension manifest for the host application, re-exported from its own module
+// (see ./manifest) alongside the default component.
+export { manifest } from './manifest';
 
 /**
  * Text Editor Extension Component

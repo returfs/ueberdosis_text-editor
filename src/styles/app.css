@@ -38,15 +38,6 @@
 .ProseMirror {
   @apply z-0 mx-auto max-w-screen-xl pl-12 pr-2 caret-black outline-0 lg:pl-24 lg:pr-24 dark:caret-white;
 
-  /* `.selection` is the decoration the Selection extension draws while the
-     editor is BLURRED (out of focus). `inline-block` made it render as a boxy
-     pill and washed out the text in dark mode — keep it a flat, translucent
-     highlight that matches the native focused selection. */
-  .selection,
-  *::selection {
-    @apply bg-black/20 dark:bg-white/30;
-  }
-
   & > .react-renderer {
     @apply my-12 first:mt-0 last:mb-0;
   }
@@ -62,6 +53,22 @@
       @apply -top-[1.5em] left-0 right-0 mx-auto w-full max-w-screen-xl border-t-black/40 dark:border-t-white/40;
     }
   }
+}
+
+/* Text selection highlight (`.selection` = the decoration the Selection
+   extension draws while the editor is blurred; `::selection` = native focused
+   selection). Written flat with `.dark` on an ANCESTOR rather than a `dark:`
+   utility: a `dark:` variant on `::selection` compiles to an invalid selector
+   (`*::selection:is(.dark *)`) which browsers drop, leaving dark mode stuck on
+   the near-invisible black highlight. */
+.ProseMirror .selection,
+.ProseMirror *::selection {
+  background-color: rgb(0 0 0 / 0.2);
+}
+
+.dark .ProseMirror .selection,
+.dark .ProseMirror *::selection {
+  background-color: rgb(255 255 255 / 0.3);
 }
 
 [data-reference-hidden] {
