@@ -1,6 +1,7 @@
 import type { Editor } from '@tiptap/react';
 import { useCallback, useEffect, useState } from 'react';
 import { Doc, encodeStateAsUpdate } from 'yjs';
+import type { RichDocumentType } from '@/document-types';
 
 /**
  * Reconciliation (Phase D3)
@@ -19,7 +20,7 @@ import { Doc, encodeStateAsUpdate } from 'yjs';
 
 const API_BASE_URL =
   (import.meta.env.VITE_RETURFS_API_URL as string | undefined) ||
-  'http://project.test';
+  'https://project.test';
 
 function buildUrl(path: string): string {
   if (path.startsWith('http://') || path.startsWith('https://')) {
@@ -44,8 +45,9 @@ interface UseReconciliationParams {
   updateRoute?: string;
   /** Async auth-token getter (collab token in prod, dev rfsk_ key standalone). */
   getToken?: () => Promise<string>;
-  /** Active document type id — selects the right sidecar server-side. */
-  documentType: string;
+  /** Active document type — selects the sidecar server-side, and decides how
+   *  keep-mine exports the document back to the file. */
+  documentType: RichDocumentType;
   /** The Tiptap editor — source of the plain export for keep-mine. */
   editor: Editor | null;
   /** The Yjs document — source of the rich state for keep-mine. */
@@ -84,7 +86,7 @@ export function useReconciliation({
   const withType = useCallback(
     (url: string): string => {
       const sep = url.includes('?') ? '&' : '?';
-      return `${url}${sep}document_type=${encodeURIComponent(documentType)}`;
+      return `${url}${sep}document_type=${encodeURIComponent(documentType.id)}`;
     },
     [documentType],
   );
@@ -120,7 +122,9 @@ export function useReconciliation({
     if (!updateRoute || !editor) return;
     setBusy(true);
     try {
-      const plain = editor.getText({ blockSeparator: '\n' });
+      // Export the way this file type is written — markdown for a `.md`, not
+      // the stripped text that would erase its headings and links.
+      const plain = documentType.fromDoc(editor);
       const content = btoa(unescape(encodeURIComponent(plain)));
       const rich = toBase64(encodeStateAsUpdate(doc));
 
@@ -131,7 +135,7 @@ export function useReconciliation({
           content,
           encoding: 'base64',
           rich,
-          document_type: documentType,
+          document_type: documentType.id,
         }),
       });
       setExternalChange(false);

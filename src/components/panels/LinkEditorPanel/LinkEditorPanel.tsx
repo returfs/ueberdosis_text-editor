@@ -79,7 +79,7 @@ export const LinkEditorPanel = ({
         </Button>
       </form>
       <div className="mt-3">
-        <Label className="flex cursor-pointer select-none items-center justify-start gap-2 text-sm font-semibold text-neutral-500 dark:text-neutral-400">
+        <Label className="flex cursor-pointer items-center justify-start gap-2 text-sm font-semibold text-neutral-500 select-none dark:text-neutral-400">
           Open in new tab
           <Switch
             checked={state.openInNewTab}

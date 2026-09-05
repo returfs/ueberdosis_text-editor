@@ -7,6 +7,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  useT,
 } from '@returfs/shared-external-react';
 import React from 'react';
 
@@ -33,29 +34,25 @@ export function ReconciliationDialog({
   onKeepMine,
   onReloadExternal,
 }: ReconciliationDialogProps) {
+  const t = useT('ext:text-editor');
+
   return (
     <AlertDialog open={open}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>
-            This file changed outside the editor
-          </AlertDialogTitle>
-          <AlertDialogDescription>
-            The file was edited somewhere else since you last saved here. Keep
-            your version (replacing the external changes), or reload the
-            external changes (your formatting for this document will be lost).
-          </AlertDialogDescription>
+          <AlertDialogTitle>{t('reconcile.title')}</AlertDialogTitle>
+          <AlertDialogDescription>{t('reconcile.body')}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={busy} onClick={onReloadExternal}>
-            Reload external changes
+            {t('reconcile.reload')}
           </AlertDialogCancel>
           <AlertDialogAction
             variant="default"
             disabled={busy}
             onClick={onKeepMine}
           >
-            Keep my version
+            {t('reconcile.keepMine')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

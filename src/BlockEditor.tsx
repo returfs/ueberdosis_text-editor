@@ -4,6 +4,9 @@ import {
   EntranceHeader,
   SaveStatus,
   useExtensionMenuBar,
+  useT,
+  useUnsavedWork,
+  type HeaderNode,
 } from '@returfs/shared-external-react';
 import { EditorContent, Editor } from '@tiptap/react';
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
@@ -13,20 +16,18 @@ import { ContentItemMenu } from './components/menus/ContentItemMenu';
 import { useEditorMenuBarMenus } from './components/menus/HeaderMenu/useEditorMenuBarMenus';
 import { useHeaderMenuNodes } from './components/menus/HeaderMenu/useHeaderMenuNodes';
 import { manifest } from './manifest';
+import CollabRelayEditor from './CollabRelayEditor';
 import LinkMenu from './components/menus/LinkMenu/LinkMenu';
 import { ColumnsMenu } from './components/menus/MultiColumn/menus';
 import ImageBlockMenu from './extensions/ImageBlock/components/ImageBlockMenu';
 import { TableColumnMenu, TableRowMenu } from './extensions/Table/menus';
-import { DEFAULT_DOCUMENT_TYPE } from './document-types';
+import { richDocumentTypeFor, type RichDocumentType } from './document-types';
 import { useBlockEditor } from './hooks/useBlockEditor';
 import { useReconciliation } from './hooks/useReconciliation';
 import { useSaveStatus } from './hooks/useSaveStatus';
+import { SourceView } from './surfaces/SourceView';
+import { useModeNodes, useSourceMode } from './surfaces/editorMode';
 import { BlockEditorProps } from './types';
-
-// The document type this package operates as. The form-builder package (a
-// separate package replicating this one) swaps this single descriptor; the
-// editor core below stays generic.
-const documentType = DEFAULT_DOCUMENT_TYPE;
 
 /**
  * Thin wrapper that owns the reload nonce. "Reload external changes" bumps it,
@@ -69,9 +70,17 @@ interface BlockEditorInstanceProps extends BlockEditorProps {
 function BlockEditorInstance({
   resourceItem,
   resourceUser,
+  bridge,
+  onDone,
   onRequestReload,
 }: BlockEditorInstanceProps) {
+  const t = useT('ext:text-editor');
   const resourceId = resourceItem?.id;
+
+  // Which kind of document this file is, decided by its extension. It selects
+  // the editor's export format, the sync server's flatten/hydrate and the rich
+  // sidecar, so every mode below has to read it from the same place.
+  const documentType = richDocumentTypeFor(resourceItem?.extension);
 
   // AUTH (Phase 4). Two paths, decided by whether the host supplied a collab
   // token URL:
@@ -88,7 +97,7 @@ function BlockEditorInstance({
   const devApiKey = import.meta.env.VITE_RETURFS_API_KEY as string | undefined;
   const apiBase =
     (import.meta.env.VITE_RETURFS_API_URL as string | undefined) ||
-    'http://project.test';
+    'https://project.test';
 
   const getToken = useCallback(async (): Promise<string> => {
     if (collabTokenUrl) {
@@ -128,6 +137,38 @@ function BlockEditorInstance({
     provider: HocuspocusProvider;
   } | null>(null);
 
+  // MODE (Phase 4E). E2EE files cannot ride Hocuspocus (the sync server only
+  // handles plaintext), so the token mint answers `{e2ee: true}` instead of a
+  // token and we switch to the bridge-backed local editor. Standalone dev
+  // (no collabTokenUrl) is always collab.
+  const [mode, setMode] = useState<'probing' | 'collab' | 'e2ee'>(
+    collabTokenUrl ? 'probing' : 'collab',
+  );
+
+  useEffect(() => {
+    if (!collabTokenUrl || !resourceId) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const res = await fetch(collabTokenUrl, {
+          method: 'POST',
+          headers: { Accept: 'application/json' },
+        });
+        const json = await res.json();
+        const isE2ee = Boolean(json?.data?.e2ee ?? json?.e2ee);
+        if (!cancelled) setMode(isE2ee ? 'e2ee' : 'collab');
+      } catch {
+        // Probe is best-effort; the collab path has its own failure UX.
+        if (!cancelled) setMode('collab');
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [collabTokenUrl, resourceId]);
+
   // Gate the editor on the FIRST sync: mount Tiptap only after the provider has
   // synced so it binds to an already-populated Yjs doc. Mounting on an empty doc
   // makes the Collaboration extension seed an empty paragraph that then MERGES
@@ -137,7 +178,7 @@ function BlockEditorInstance({
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    if (!resourceId) return;
+    if (!resourceId || mode !== 'collab') return;
 
     const doc = new Doc();
     const provider = new HocuspocusProvider({
@@ -173,37 +214,51 @@ function BlockEditorInstance({
       setConn(null);
       setReady(false);
     };
-  }, [resourceId, getToken]);
+  }, [resourceId, getToken, mode]);
 
   if (!resourceId) {
     return null;
   }
 
-  if (!conn) {
+  if (mode === 'probing') {
+    return <EditorNotice message={t('editor.loading')} />;
+  }
+
+  if (mode === 'e2ee') {
+    if (!bridge) {
+      return <EditorNotice message={t('viewer.encryptedNeedsApp')} />;
+    }
+
+    // Phase 5A: hosts that offer the sealed relay get real-time collab for
+    // e2ee documents; CollabRelayEditor degrades to LocalEditor when the
+    // relay is unavailable or refuses the join.
     return (
-      <div className="flex h-full w-full items-center justify-center text-sm text-neutral-400">
-        Loading…
-      </div>
+      <CollabRelayEditor
+        resourceItem={resourceItem}
+        resourceUser={resourceUser}
+        bridge={bridge}
+        documentType={documentType}
+        onDone={onDone}
+        onRequestReload={onRequestReload}
+      />
     );
+  }
+
+  if (!conn) {
+    return <EditorNotice message={t('editor.loading')} />;
   }
 
   if (!ready && failed) {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-sm text-neutral-400">
-        <span>Couldn’t connect to the collaboration server.</span>
-        <Button type="button" variant="outline" onClick={onRequestReload}>
-          Retry
-        </Button>
-      </div>
+      <EditorNotice
+        message={t('editor.connectFailed')}
+        onRetry={onRequestReload}
+      />
     );
   }
 
   if (!ready) {
-    return (
-      <div className="flex h-full w-full items-center justify-center text-sm text-neutral-400">
-        Loading…
-      </div>
-    );
+    return <EditorNotice message={t('editor.loading')} />;
   }
 
   return (
@@ -214,8 +269,32 @@ function BlockEditorInstance({
       resourceUser={resourceUser}
       getToken={getToken}
       resourceRoute={resourceRoute}
+      documentType={documentType}
+      onDone={onDone}
       onRequestReload={onRequestReload}
     />
+  );
+}
+
+/** A centred message, optionally with a way out of whatever went wrong. */
+function EditorNotice({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry?: () => void;
+}) {
+  const t = useT('ext:text-editor');
+
+  return (
+    <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-sm text-neutral-400">
+      <span>{message}</span>
+      {onRetry && (
+        <Button type="button" variant="outline" onClick={onRetry}>
+          {t('editor.retry')}
+        </Button>
+      )}
+    </div>
   );
 }
 
@@ -229,12 +308,15 @@ const EditorHeader = memo(function EditorHeader({
   fullname,
   fileBaseName,
   saveState,
+  modeNodes,
 }: {
   editor: Editor;
   fullname: string;
   fileBaseName: string;
   saveState: ReturnType<typeof useSaveStatus>;
+  modeNodes: HeaderNode[];
 }) {
+  const t = useT('ext:text-editor');
   const menu = useHeaderMenuNodes(editor);
   const menus = useEditorMenuBarMenus(editor, fileBaseName);
   // returfs owns the App menu (name + About); the extension fills File/Edit/View.
@@ -244,12 +326,14 @@ const EditorHeader = memo(function EditorHeader({
       <EntranceHeader
         fullname={fullname}
         menubar={menubar}
-        menu={menu}
+        // Done and the source toggle lead, so they are the last things to
+        // collapse into the overflow menu as the formatting toolbar grows.
+        menu={[...modeNodes, ...menu]}
         end={
           // Collab semantics: an error here is the connection, not a write.
           <SaveStatus
             state={saveState}
-            labels={{ error: 'Connection error' }}
+            labels={{ error: t('editor.connectionError') }}
           />
         }
       />
@@ -265,6 +349,8 @@ interface EditorSurfaceProps extends BlockEditorInstanceProps {
   getToken: () => Promise<string>;
   /** Absolute resource route the client reconciliation calls (collab/dev). */
   resourceRoute: string;
+  /** The kind of document this file is (see documentTypeFor). */
+  documentType: RichDocumentType;
 }
 
 function EditorSurface({
@@ -274,6 +360,8 @@ function EditorSurface({
   resourceUser,
   getToken,
   resourceRoute,
+  documentType,
+  onDone,
   onRequestReload,
 }: EditorSurfaceProps) {
   const menuContainerRef = useRef(null);
@@ -289,13 +377,36 @@ function EditorSurface({
     route: resourceRoute,
     updateRoute: resourceRoute,
     getToken,
-    documentType: documentType.id,
+    documentType,
     editor,
     doc,
     onReload: onRequestReload,
   });
 
   const saveState = useSaveStatus(provider);
+
+  const sourceMode = useSourceMode(documentType, editor);
+  const { close: closeSource } = sourceMode;
+
+  const done = useCallback(() => {
+    // Apply a pending source edit before leaving, or the view would render the
+    // document as it was before the user typed into the textarea.
+    closeSource();
+    if (editor && onDone)
+      onDone({
+        document: editor.getJSON(),
+        plain: documentType.fromDoc(editor),
+      });
+  }, [closeSource, documentType, editor, onDone]);
+
+  const modeNodes = useModeNodes({
+    sourceMode,
+    onDone: onDone && done,
+  });
+
+  // Keep the app from closing on edits the collaboration server has not
+  // acknowledged yet ("Warn before leaving").
+  useUnsavedWork(`text-editor:${resourceItem?.id ?? 'document'}`, saveState);
 
   if (!editor) {
     return null;
@@ -311,6 +422,7 @@ function EditorSurface({
         fullname={`${resourceItem?.name}.${resourceItem?.extension}`}
         fileBaseName={resourceItem?.name ?? 'document'}
         saveState={saveState}
+        modeNodes={modeNodes}
       />
 
       {/* The ONLY scroll area. The header above is a flex sibling (outside this
@@ -318,15 +430,22 @@ function EditorSurface({
           -hidden, so it fits the portal exactly and the host no longer adds a
           second scrollbar — only this inner area scrolls. flex-1 keeps the
           editor filling the height so the empty area stays clickable. */}
-      <div className="relative flex min-h-0 w-full flex-1 flex-col overflow-y-auto">
-        <EditorContent className="flex-1" editor={editor} />
-        <ContentItemMenu editor={editor} />
-        <LinkMenu editor={editor} appendTo={menuContainerRef} />
-        <ColumnsMenu editor={editor} appendTo={menuContainerRef} />
-        <TableRowMenu editor={editor} appendTo={menuContainerRef} />
-        <TableColumnMenu editor={editor} appendTo={menuContainerRef} />
-        <ImageBlockMenu editor={editor} appendTo={menuContainerRef} />
-      </div>
+      {sourceMode.active ? (
+        <SourceView
+          value={sourceMode.draft ?? ''}
+          onChange={sourceMode.setDraft}
+        />
+      ) : (
+        <div className="relative flex min-h-0 w-full flex-1 flex-col overflow-y-auto">
+          <EditorContent className="flex-1" editor={editor} />
+          <ContentItemMenu editor={editor} />
+          <LinkMenu editor={editor} appendTo={menuContainerRef} />
+          <ColumnsMenu editor={editor} appendTo={menuContainerRef} />
+          <TableRowMenu editor={editor} appendTo={menuContainerRef} />
+          <TableColumnMenu editor={editor} appendTo={menuContainerRef} />
+          <ImageBlockMenu editor={editor} appendTo={menuContainerRef} />
+        </div>
+      )}
 
       <ReconciliationDialog
         open={externalChange}

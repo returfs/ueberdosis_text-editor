@@ -75,7 +75,7 @@ export const FontFamilyPicker = ({
               className="mt-2.5 flex flex-col gap-0.5 first:mt-0"
               key={group.label}
             >
-              <DropdownMenuLabel className="text-[.65rem] font-semibold uppercase text-neutral-500 dark:text-neutral-400">
+              <DropdownMenuLabel className="text-[.65rem] font-semibold text-neutral-500 uppercase dark:text-neutral-400">
                 {group.label}
               </DropdownMenuLabel>
               {group.options.map(font => (

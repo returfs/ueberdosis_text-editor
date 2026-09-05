@@ -7,15 +7,15 @@
  */
 
 import { defineConfig, loadEnv, type ConfigEnv } from 'vite';
-import react from '@vitejs/plugin-react-swc';
+import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { federation } from '@module-federation/vite';
 import path from 'path';
 
 export default defineConfig(({ mode }: ConfigEnv) => {
   const isFederated = mode === 'federated';
-  const env = loadEnv(mode, __dirname, '');
-  const apiUrl = env.VITE_RETURFS_API_URL || 'http://project.test';
+  const env = loadEnv(mode, import.meta.dirname, '');
+  const apiUrl = env.VITE_RETURFS_API_URL || 'https://project.test';
 
   return {
     plugins: [
@@ -28,8 +28,17 @@ export default defineConfig(({ mode }: ConfigEnv) => {
               filename: 'remoteEntry.js',
               exposes: {
                 './Extension': './src/Extension.tsx',
+                // Read-only view of one file for the host's preview surfaces.
+                './Preview': './src/Preview.tsx',
               },
               remotes: {},
+              // Remote type generation OFF. This extension only exposes (remotes
+              // is empty) and nothing in the repo imports the generated @mf-types,
+              // so the dts worker was pure waste: it respawned a full `npm exec tsc`
+              // over the whole Tiptap graph every few seconds for the entire life of
+              // the dev server and wrote a new hash-named tsconfig each pass
+              // (61k files / ~1GB in node_modules/.federation). Leave this false.
+              dts: false,
               shared: {
                 react: {
                   singleton: true,
@@ -54,7 +63,7 @@ export default defineConfig(({ mode }: ConfigEnv) => {
     ],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, 'src'),
+        '@': path.resolve(import.meta.dirname, 'src'),
       },
     },
     optimizeDeps: {
@@ -63,7 +72,7 @@ export default defineConfig(({ mode }: ConfigEnv) => {
       // Without this, the heavy Tiptap graph is discovered lazily on first load,
       // triggering "optimized dependencies changed → reloading" mid-load — a full
       // page reload that tanks first paint (and caused stale-chunk 404s).
-      entries: ['./src/Extension.tsx', './src/main.tsx'],
+      entries: ['./src/Extension.tsx', './src/Preview.tsx', './src/main.tsx'],
       // Force-prebundle the big/many runtime deps + the late-discovered
       // react-dom/client (pulled by the excluded SDK), so none of them get
       // optimized lazily after the page is already loading.
@@ -124,7 +133,6 @@ export default defineConfig(({ mode }: ConfigEnv) => {
     ...(!isFederated && {
       build: {
         target: 'esnext',
-        minify: 'esbuild' as const,
         outDir: 'dist-dev',
       },
     }),

@@ -25,11 +25,11 @@ import {
   StarterKit,
   Subscript,
   Superscript,
-  //   Table,
+  Table,
   //   TableOfContents,
-  //   TableCell,
-  //   TableHeader,
-  //   TableRow,
+  TableCell,
+  TableHeader,
+  TableRow,
   TextAlign,
   TextStyle,
   TrailingNode,
@@ -45,7 +45,11 @@ import {
 
 import { isChangeOrigin } from '@tiptap/extension-collaboration';
 
-export const ExtensionKit = () => [
+/**
+ * The editor schema. Collab mode keeps StarterKit history OFF (Yjs provides
+ * its own undo); the LOCAL e2ee mode has no Yjs, so it opts history back in.
+ */
+export const ExtensionKit = (options: { history?: boolean } = {}) => [
   Document,
   Columns,
   TaskList,
@@ -68,7 +72,7 @@ export const ExtensionKit = () => [
     heading: false,
     horizontalRule: false,
     blockquote: false,
-    history: false,
+    history: options.history ? undefined : false,
     codeBlock: false,
   }),
   Details.configure({
@@ -132,10 +136,13 @@ export const ExtensionKit = () => [
   }),
   Subscript,
   Superscript,
-  //   Table,
-  //   TableCell,
-  //   TableHeader,
-  //   TableRow,
+  // Markdown has tables, so the schema needs them — and the row/column bubble
+  // menus were already mounted in the editor, waiting for a schema that could
+  // produce a table for them to attach to.
+  Table,
+  TableCell,
+  TableHeader,
+  TableRow,
   Typography,
   Placeholder.configure({
     includeChildren: true,

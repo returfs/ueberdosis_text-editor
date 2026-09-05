@@ -1,10 +1,14 @@
-@import 'tailwindcss';
+/* Tailwind goes into the `extension` layer, which the host declares first (see
+   frontend/src/layers.css) so it sorts below the app's own styles: this chunk
+   is injected into the host document after theirs, and an unlayered copy of a
+   shared utility here would silently win every tie. */
+@import 'tailwindcss' layer(extension);
 
 /* Enable class-based dark mode (Tailwind v4) - matches shared-external-react */
 @custom-variant dark (&:is(.dark *));
 
 /* Include shared-external-react source files for class detection */
-@source '../../../../../external/returfs/shared-external-react/src/**/*.{ts,tsx}';
+@source '../../../../../external/extension-packages/shared-external-react/src/**/*.{ts,tsx}';
 /* Include local source files for class detection */
 @source '../**/*.{ts,tsx}';
 
@@ -26,6 +30,7 @@
 @import './partials/blocks.css';
 @import './partials/collaboration.css';
 @import './partials/code.css';
+@import './partials/codemirror.css';
 @import './partials/lists.css';
 @import './partials/placeholder.css';
 @import './partials/table.css';

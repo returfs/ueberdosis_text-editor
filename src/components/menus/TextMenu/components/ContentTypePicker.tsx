@@ -78,7 +78,7 @@ export const ContentTypePicker = ({ options }: ContentTypePickerProps) => {
               return (
                 <DropdownMenuLabel
                   key={option.id}
-                  className="text-[.65rem] font-semibold uppercase text-neutral-500 dark:text-neutral-400"
+                  className="text-[.65rem] font-semibold text-neutral-500 uppercase dark:text-neutral-400"
                 >
                   {option.label}
                 </DropdownMenuLabel>

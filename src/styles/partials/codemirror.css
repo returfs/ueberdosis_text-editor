@@ -1,0 +1,184 @@
+/* The code surface.
+ *
+ * CodeMirror ships no colours of its own here: `codeSetup.ts` assigns each
+ * syntax token a `tok-*` class and this file paints them, so the editor follows
+ * the app's light/dark switch with no theme swapping at runtime. */
+
+.cm-editor {
+  @apply h-full text-sm;
+
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
+    'Liberation Mono', monospace;
+}
+
+/* CodeMirror draws its own focus ring around the whole pane, which reads as a
+   stray border inside a surface that is already the focused thing. */
+.cm-editor.cm-focused {
+  @apply outline-none;
+}
+
+.cm-scroller {
+  @apply overflow-auto;
+
+  /* Slightly open leading: dense by default, and a log is read in bulk. */
+  line-height: 1.55;
+}
+
+.cm-gutters {
+  @apply select-none border-r border-neutral-200 bg-neutral-50 text-neutral-400;
+  @apply dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-600;
+}
+
+.cm-activeLineGutter {
+  @apply bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300;
+}
+
+.cm-activeLine {
+  @apply bg-neutral-100/60 dark:bg-neutral-800/40;
+}
+
+.cm-content {
+  @apply caret-neutral-900 dark:caret-neutral-100;
+}
+
+.cm-cursor,
+.cm-dropCursor {
+  @apply border-l-neutral-900 dark:border-l-neutral-100;
+}
+
+.cm-selectionBackground {
+  @apply bg-neutral-300 dark:bg-neutral-700;
+}
+
+/* Written out rather than with a `dark:` variant: Tailwind compiles a variant
+   on a pseudo-element into an empty `:is()`, which is an invalid selector, and
+   the rule is dropped without an error. The same shape is used for ProseMirror
+   selections in app.css. */
+.cm-content ::selection {
+  background-color: var(--color-neutral-300);
+}
+
+.dark .cm-content ::selection {
+  background-color: var(--color-neutral-700);
+}
+
+.cm-focused .cm-selectionBackground {
+  @apply bg-blue-200 dark:bg-blue-900/60;
+}
+
+.cm-selectionMatch {
+  @apply bg-amber-200/60 dark:bg-amber-500/20;
+}
+
+.cm-matchingBracket,
+.cm-focused .cm-matchingBracket {
+  @apply bg-emerald-200/70 dark:bg-emerald-500/25;
+}
+
+.cm-nonmatchingBracket {
+  @apply bg-red-200/70 dark:bg-red-500/25;
+}
+
+.cm-panels {
+  @apply border-neutral-200 bg-neutral-50 text-neutral-800;
+  @apply dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-200;
+}
+
+.cm-tooltip {
+  @apply rounded-md border border-neutral-200 bg-white text-neutral-800 shadow-md;
+  @apply dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100;
+}
+
+.cm-tooltip-autocomplete > ul > li[aria-selected] {
+  @apply bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-50;
+}
+
+/* Remote collaborators, drawn by y-codemirror.next. The colour is chosen per
+   user and arrives inline; only the shape is ours. */
+.cm-ySelectionCaret {
+  @apply relative;
+}
+
+.cm-ySelectionInfo {
+  @apply absolute -top-[1.15em] left-[-1px] z-10 rounded-sm px-1 py-px text-[0.65rem] font-medium leading-tight text-white opacity-0 transition-opacity;
+
+  white-space: nowrap;
+}
+
+.cm-ySelectionCaret:hover > .cm-ySelectionInfo {
+  @apply opacity-100;
+}
+
+/* Syntax tokens -------------------------------------------------------- */
+
+.tok-keyword {
+  @apply text-violet-700 dark:text-violet-300;
+}
+
+.tok-property {
+  @apply text-sky-700 dark:text-sky-300;
+}
+
+.tok-variable {
+  @apply text-neutral-800 dark:text-neutral-200;
+}
+
+.tok-function {
+  @apply text-blue-700 dark:text-blue-300;
+}
+
+.tok-type {
+  @apply text-teal-700 dark:text-teal-300;
+}
+
+.tok-number {
+  @apply text-orange-700 dark:text-orange-300;
+}
+
+.tok-string {
+  @apply text-emerald-700 dark:text-emerald-300;
+}
+
+.tok-comment {
+  @apply italic text-neutral-500 dark:text-neutral-500;
+}
+
+.tok-operator {
+  @apply text-neutral-500 dark:text-neutral-400;
+}
+
+.tok-meta {
+  @apply text-neutral-500 dark:text-neutral-400;
+}
+
+.tok-tag {
+  @apply text-rose-700 dark:text-rose-300;
+}
+
+.tok-attribute {
+  @apply text-amber-700 dark:text-amber-300;
+}
+
+.tok-heading {
+  @apply font-semibold text-violet-700 dark:text-violet-300;
+}
+
+.tok-link {
+  @apply underline decoration-dotted;
+}
+
+.tok-invalid {
+  @apply text-red-600 dark:text-red-400;
+}
+
+.tok-strong {
+  @apply font-semibold;
+}
+
+.tok-emphasis {
+  @apply italic;
+}
+
+.tok-strike {
+  @apply line-through;
+}
